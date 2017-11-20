@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title></title>
+  </head>
+  <body>
+    <svg
+      width="300"
+      height="300"
+    >
+      <circle cx="150" cy="150" r="5" fill="blue"/>
+    </svg>
+    <div id="container" style="width: 400px"></div>
+    <script src="simple-svg-pie.js"></script>
+    <script>
+      let simplePie = new SimplePie({
+        values: [20,30,40],
+        parent: '#container'
+      })
+      setTimeout(() => {
+        simplePie.values = [10,20,30]
+        simplePie.update()
+      },500)
+    </script>
+    <script charset="utf-8">
+
+      function create (type) {
+        let el = document.createElementNS('http://www.w3.org/2000/svg', type)
+        el.attr = function (attrs) {
+          Object.keys(attrs).forEach((key) => {
+            el.setAttributeNS(null, key, attrs[key])
+          })
+        }
+        return el
+      }
+
+      function createArc (value, acc) {
+
+      }
+
+      function calc (values) {
+        let nodes = []
+        let ox = 150 + 100 * (Math.cos(Math.PI/2))
+        let oy = 150 - 100 * (Math.sin(Math.PI/2)) 
+        let st = 0
+        for (let v of values) {
+          let t = 2 * Math.PI * v / 100
+          st += t
+          let nx = 150 + 100 * (Math.cos(st - Math.PI/2))
+          let ny = 150 + 100 * (Math.sin(st - Math.PI/2))
+          let pie = create('path')
+          console.log(v, ox, oy, nx, ny)
+          pie.attr({
+            fill: `rgb(${v*2},${256-v*2},${v*3})`,
+            d: `
+              M ${ox} ${oy} 
+              A 100 100 0 ${(t < Math.PI) ? 0 : 1} 1 ${nx} ${ny} 
+              L 150 150 Z
+            `
+          })
+          nodes.push(pie)
+          ox = nx
+          oy = ny
+        }
+        return nodes
+      }
+
+      function updateNodes (values, nodes) {
+        for (let i = 0; i < Math.max(values.length, nodes.length); i++) {
+          if (values[i] && nodes[i]) {
+            nodes[i].attr = calc()
+          }  
+        }
+        values.forEach((v, i) => {
+        })
+      }
+/*
+      let v1 = [20,40,10,30]
+      let v2 = [10,10,50]
+      function update (values, labels) {
+        let inc = []
+        let steps = 100
+        for (let i = 0; i < Math.max(v1.length, v2.length); i++) {
+          let value1 = (v1[i] !== undefined) ? v1[i] : 0
+          let value2 = (v2[i] !== undefined) ? v2[i] : 0
+          inc[i] = (value2 - value1) / steps
+        }
+        +function interpolate () {
+          setTimeout(()=>{
+            steps--
+            v1 = (steps) ? v1.map((v, i) => v + inc[i]) : v2
+            console.log(v1)
+            if (steps) interpolate()
+          },40)
+        }()
+
+      }
+      update()
+*/
+      // [1,2,3] -> [1,2,3,4]
+      // [1,2,3] -> [1,2]
+      // [1,2,3] -> [2,3,4]
+
+      const svg = document.querySelector('svg')
+     // let pie = create('path')
+     // let value = 11
+     // let cx1 = 150 + 100 * (Math.cos(-Math.PI/2))
+     // let cy1 = 150 + 100 * (Math.sin(-Math.PI/2))
+     // let t = 2 * Math.PI * value / 100
+     // let cx2 = 150 + 100 * (Math.cos(t - Math.PI/2))
+     // let cy2 = 150 + 100 * (Math.sin(t - Math.PI/2))
+     // pie.attr({
+     //   fill: 'rgb(30,60,90)',
+     //   d: `
+     //     M ${cx1} ${cy1} 
+     //     A 100 100 0 ${(t < Math.PI) ? 0 : 1} 1 ${cx2} ${cy2} 
+     //     L 150 150 Z
+     //   `
+     // })
+     // 
+     // +function animate() {
+     //   setTimeout(()=>{
+     //     value += 1
+     //     let t = 2 * Math.PI * value / 100
+     //     let cx2 = 150 + 100 * (Math.cos(t - Math.PI/2))
+     //     let cy2 = 150 + 100 * (Math.sin(t - Math.PI/2))
+     //     pie.attr({
+     //       d: `
+     //         M ${cx1} ${cy1} 
+     //         A 100 100 0 ${(t < Math.PI) ? 0 : 1} 1 ${cx2} ${cy2} 
+     //         L 150 150 Z
+     //       `
+     // })
+     // if (value < 99) {
+     //       animate()
+     //     }
+     //   }, 20)
+     // }()
+     // 
+     // svg.appendChild(pie)
+     var border = create('circle')
+     border.attr({
+       stroke: '#EEE',
+       fill: 'none',
+       cx: 150,
+       cy: 150,
+       r: 97
+     })
+     svg.appendChild(border)     
+     calc([25, 5, 40]).forEach((e)=>{
+       svg.appendChild(e)
+     })
+     var rad = create('circle')
+     rad.attr({
+       fill: 'white',
+       cx: 150,
+       cy: 150,
+       r: 94
+     })
+     svg.appendChild(rad)
+    </script>
+  </body>
+</html>
