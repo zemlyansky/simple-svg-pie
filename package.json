@@ -1,0 +1,12 @@
+{
+  "name": "simple-svg-pie",
+  "version": "1.0.0",
+  "description": "",
+  "main": "simple-svg-pie.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

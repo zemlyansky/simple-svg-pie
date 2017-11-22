@@ -42,19 +42,19 @@ function factory () {
     let steps = 100
     let coeffs = []
     let maxLength = Math.max(oldValues.length, newValues.length)
+    let diffLength = oldValues.length - newValues.length
+
     for (let i = 0; i < maxLength; i++) {
       let n = (newValues[i] !== undefined) ? newValues[i] : 0
       let o = (oldValues[i] !== undefined) ? oldValues[i] : 0
       coeffs.push((n - o) / steps)
     }
-    console.log(oldValues)
+
     let interval = setInterval(() => {
       console.log('processing step: ', steps)
       for (let i = 0; i < maxLength; i++) {
         if (oldValues[i] === undefined) {
           oldValues.push(coeffs[i])
-        } else if (oldValues[i] < 0) {
-          oldValues.splice(i, 1)
         } else {
           oldValues[i] = oldValues[i] + coeffs[i]
         }
@@ -62,8 +62,13 @@ function factory () {
 
       steps -= 1
       if (steps <= 0) {
+        // Clear empty-values
+        if (diffLength > 0) {
+          oldValues.splice(-1, diffLength)
+        }
+        // Make oldValues array equal to newValues
+        newValues.forEach((v, i) => { oldValues[i] = v })
         clearInterval(interval)
-        oldValues = newValues
       }
 
       cb(oldValues)
@@ -73,8 +78,10 @@ function factory () {
   class SimplePie {
     constructor (params) {
       // Store data internally
-      this.oldValues = this.values = Array.from(params.values)
+      this.oldValues = []
+      this.values = Array.from(params.values)
       this.labels = params.labels ? Array.from(params.labels) : []
+      this.arcs = []
 
       // Create SVG container
       let container = document.createElement('div')
@@ -89,12 +96,12 @@ function factory () {
       `
 
       // Create SVG element
-      let svg = createElementSVG('svg')
-      setAttributesSVG(svg, {
+      this.svg = createElementSVG('svg')
+      setAttributesSVG(this.svg, {
         viewBox: `0 0 ${SIZE} ${SIZE}`,
         preserveAspectRatio: 'xMinYMin meet'
       })
-      svg.style.cssText = `
+      this.svg.style.cssText = `
         display: inline-block;
         position: absolute;
         top: 10px;
@@ -102,19 +109,47 @@ function factory () {
       `
 
       // Append SVG element to the container
-      container.appendChild(svg)
+      container.appendChild(this.svg)
       // Append the container to a parent element
       document
         .querySelector(params.parent)
         .appendChild(container)
 
-      interpolateData([10,5,40], [100,20,15,5], function (tempValues) {
-        console.log(calculateArcs(tempValues))
-      })
+      this.update()
     } // *constructor
 
     update () {
-    
+      interpolateData(this.oldValues, this.values, (tempValues) => {
+        let ds = calculateArcs(tempValues)
+        let maxLength = Math.max(tempValues.length, this.arcs.length)
+        for (let i = 0; i < maxLength; i++) {
+          if (tempValues[i] !== undefined) {
+            // There is a value to visualize
+            if (this.arcs[i] === undefined) {
+              // Value exist, but there's no arc
+              let newArc = createElementSVG('path')
+              setAttributesSVG(newArc, {
+                stroke: `rgb(50,20,${i * 40}`,
+                fill: `rgb(50,20,${i * 40})`
+              })
+              this.arcs.push(newArc)
+              this.svg.appendChild(newArc)
+            }
+            // Just update
+            setAttributesSVG(this.arcs[i], {
+              d: ds[i]
+            })
+          } else {
+            // Arc exist, but no value
+            // Remove:
+            this.arcs[i].remove()
+            this.arcs.splice(i, 1)
+          }
+        }
+        if (tempValues.length < this.arcs.length) {
+          this.arcs.splice(-1, this.arcs.length - tempValues.length)
+        }
+      })
     }
   } // *class
 
