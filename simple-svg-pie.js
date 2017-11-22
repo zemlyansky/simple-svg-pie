@@ -3,7 +3,7 @@ function factory () {
 
   /**
    * Applies attributes
-   * @param {Element} el - html element
+   * @param {DOMElement} el - html element
    * @param {Object} attrs - attributes to apply
    */
   function setAttributesSVG (el, attrs) {
@@ -15,12 +15,17 @@ function factory () {
   /**
    * Creates a new SVG element
    * @param {String} Type of svg element to create
-   * @returns {Object} Svg element
+   * @returns {Object} - svg element
    */
   function createElementSVG (type) {
     return document.createElementNS('http://www.w3.org/2000/svg', type)
   }
 
+  /**
+   * Calculate 'd' attributes for 'path' svg elements
+   * @param {Number[]} values - array of values
+   * @returns {String[]} - array of 'd' values
+   */
   function calculateArcs (values) {
     let ds = []
     let oldX = 150 + 100 * (Math.cos(Math.PI / 2))
@@ -38,6 +43,26 @@ function factory () {
     return ds
   }
 
+  function calculateMiddlePoints (values) {
+    let ps = []
+    let totalAngle = 0
+    for (let v of values) {
+      let angle = Math.PI * v / 100
+      totalAngle += angle
+      let newX = 150 + 80 * (Math.cos(totalAngle - Math.PI / 2))
+      let newY = 150 + 80 * (Math.sin(totalAngle - Math.PI / 2))
+      totalAngle += angle
+      ps.push({x: newX, y: newY})
+    }
+    return ps
+  }
+
+  /**
+   * Interpolate arrays of values with a fixed interval
+   * @param {Number[]} oldValues
+   * @param {Number[]} newValues
+   * @param {Function} cb - callback function that runs each iteration
+   */
   function interpolateData (oldValues, newValues, cb) {
     let steps = 100
     let coeffs = []
@@ -75,6 +100,11 @@ function factory () {
     }, 10)
   }
 
+  /**
+   * Scale values to have 100% sum
+   * @param {Number[]} values
+   * @returns {Number[]}
+   */
   function normalizeValues (values) {
     let sum = values.reduce((sum, v) => sum + v, 0)
     return values.map((v) => v * 100 / sum)
@@ -126,24 +156,42 @@ function factory () {
     update () {
       interpolateData(this.oldValues, this.values, (tempValues) => {
         let ds = calculateArcs(normalizeValues(tempValues))
+        let ps = calculateMiddlePoints(normalizeValues(tempValues))
+        console.log('ps: ', ps)
         let maxLength = Math.max(tempValues.length, this.arcs.length)
         for (let i = 0; i < maxLength; i++) {
           if (tempValues[i] !== undefined) {
             // There is a value to visualize
             if (this.arcs[i] === undefined) {
               // Value exist, but there's no arc
+              let g = createElementSVG('g')
               let newArc = createElementSVG('path')
               setAttributesSVG(newArc, {
                 stroke: `rgb(50,20,${i * 40}`,
                 fill: `rgb(50,20,${i * 40})`
               })
-              this.arcs.push(newArc)
-              this.svg.appendChild(newArc)
+              let newLabel = createElementSVG('text')
+              setAttributesSVG(newLabel, {
+                fill: 'white',
+                stroke: 'none',
+                'text-anchor': 'middle',
+                'font-size': '10px',
+                'font-family': 'sans-serif'
+              })
+              g.appendChild(newArc)
+              g.appendChild(newLabel)
+              this.arcs.push(g)
+              this.svg.appendChild(g)
             }
             // Just update
-            setAttributesSVG(this.arcs[i], {
+            setAttributesSVG(this.arcs[i].children[0], {
               d: ds[i]
             })
+            setAttributesSVG(this.arcs[i].children[1], {
+              x: ps[i].x,
+              y: ps[i].y + 5
+            })
+            this.arcs[i].children[1].textContent = tempValues[i].toFixed(1)
           } else {
             // Arc exist, but no value
             // Remove:
