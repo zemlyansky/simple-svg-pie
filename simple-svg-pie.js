@@ -75,6 +75,11 @@ function factory () {
     }, 10)
   }
 
+  function normalizeValues (values) {
+    let sum = values.reduce((sum, v) => sum + v, 0)
+    return values.map((v) => v * 100 / sum)
+  }
+
   class SimplePie {
     constructor (params) {
       // Store data internally
@@ -120,7 +125,7 @@ function factory () {
 
     update () {
       interpolateData(this.oldValues, this.values, (tempValues) => {
-        let ds = calculateArcs(tempValues)
+        let ds = calculateArcs(normalizeValues(tempValues))
         let maxLength = Math.max(tempValues.length, this.arcs.length)
         for (let i = 0; i < maxLength; i++) {
           if (tempValues[i] !== undefined) {
