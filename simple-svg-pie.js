@@ -1,5 +1,5 @@
 function factory () {
-  const SIZE = 500
+  const SIZE = 300
 
   /**
    * Applies attributes
@@ -68,6 +68,7 @@ function factory () {
     let coeffs = []
     let maxLength = Math.max(oldValues.length, newValues.length)
     let diffLength = oldValues.length - newValues.length
+    console.log('diff: ', diffLength)
 
     for (let i = 0; i < maxLength; i++) {
       let n = (newValues[i] !== undefined) ? newValues[i] : 0
@@ -89,7 +90,7 @@ function factory () {
       if (steps <= 0) {
         // Clear empty-values
         if (diffLength > 0) {
-          oldValues.splice(-1, diffLength)
+          oldValues.splice(-diffLength)
         }
         // Make oldValues array equal to newValues
         newValues.forEach((v, i) => { oldValues[i] = v })
@@ -157,7 +158,7 @@ function factory () {
       interpolateData(this.oldValues, this.values, (tempValues) => {
         let ds = calculateArcs(normalizeValues(tempValues))
         let ps = calculateMiddlePoints(normalizeValues(tempValues))
-        console.log('ps: ', ps)
+        console.log(tempValues)
         let maxLength = Math.max(tempValues.length, this.arcs.length)
         for (let i = 0; i < maxLength; i++) {
           if (tempValues[i] !== undefined) {
@@ -191,19 +192,19 @@ function factory () {
               x: ps[i].x,
               y: ps[i].y + 5
             })
-            this.arcs[i].children[1].textContent = tempValues[i].toFixed(1)
-          } else {
-            // Arc exist, but no value
-            // Remove:
-            this.arcs[i].remove()
-            this.arcs.splice(i, 1)
+            this.arcs[i].children[1].textContent = (+tempValues[i].toFixed(2)).toString()
           }
         }
+        // Remove arcs we don't need anymore
         if (tempValues.length < this.arcs.length) {
-          this.arcs.splice(-1, this.arcs.length - tempValues.length)
+          this.arcs
+            // Changes this.arcs array, returns new array with elements to remove
+            .splice(tempValues.length - this.arcs.length) 
+            // Remove SVG elements
+            .forEach((arc) => { arc.remove() }) 
         }
-      })
-    }
+      }) // *interpolate callback
+    } // *update()
   } // *class
 
   return SimplePie
